@@ -1,9 +1,10 @@
-from operator import index
+from multiprocessing import Pool
 import requests
 import string
-from pprint import pprint
 import pandas as pd
 from bs4 import BeautifulSoup
+import time
+
 
 
 headers = {
@@ -14,14 +15,12 @@ headers = {
 def get_all_symbols():
     '''Return symbols for every letter'''
 
-    symbol_data = list()
-    letters = list(string.ascii_lowercase)
+    pool = Pool()
 
-    for letter in letters:
-        symbols = get_symbols(letter)
-        symbol_data.extend(symbols)
-    
-    return symbol_data
+    letters = list(string.ascii_lowercase)
+    symbols = pool.map(get_symbols, letters)
+
+    return symbols
 
 def get_symbols(letter):
     '''Get all symbols'''
@@ -49,47 +48,55 @@ def get_symbols(letter):
 def get_quote(symbol):
     '''Get Symbol Data'''
 
-
     symbol = symbol.upper()
     URL = f"https://finance.yahoo.com/quote/{symbol}"
 
-   
     response = requests.get(URL, headers=headers)
-    print(response.status_code, symbol)
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
 
     try:
-        soup = BeautifulSoup(response.text, 'html.parser')
-
         close = soup.find('fin-streamer', {"class":"Fw(b) Fz(36px) Mb(-4px) D(ib)"})
         price = soup.find('fin-streamer', {"class":"Fw(b) Fz(36px) Mb(-4px) D(ib)"})
         market_cap = soup.find('td', {"data-test":"MARKET_CAP-value"})
         name = soup.find('h1', {"class":"D(ib) Fz(18px)"})
 
         data = {
+            "ticker":symbol,
+            "name": name.text,
             "close": close.text,
             "price": price.text,
             "market_cap" : market_cap.text,
-            "ticker":symbol,
-            "name": name.text
         }
+
+        print(data)
 
         return data
     except Exception as e:
         print(str(e))
 
-
-def create_excel_file():
+def create_excel_file(symbols):
     '''Create excel file with realtime market data'''
-    symbols = get_all_symbols()
+
+    pool = Pool()
+    data = pool.map(get_quote, symbols)
+    new_data = [x for x in data if x != None]
+
+    dataframe = pd.DataFrame(new_data)
+    dataframe.dropna()
+
+    dataframe.to_excel("real_time_stock_data.xlsx", index=False)
+
+if __name__ == '__main__':
+    start = time.perf_counter()
 
     data = []
+    symbols = get_all_symbols()
 
-    for symbol in symbols:
-        symbol_data = get_quote(symbol)
-        data.append(symbol_data)
-    
-    dataframe = pd.DataFrame.from_dict(data=data, orient="columns", index=False)
+    for symbol_list in symbols:
+        data.extend(symbol_list)
 
-    dataframe.to_excel("real_time_stock_data.xlsx")
+    create_excel_file(data)
+    finish = time.perf_counter()
 
-create_excel_file()
+    print(f"Program Finished in {finish}")

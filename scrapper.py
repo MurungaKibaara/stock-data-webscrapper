@@ -3,9 +3,6 @@ import requests
 import string
 import pandas as pd
 from bs4 import BeautifulSoup
-import time
-
-
 
 headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36",
@@ -14,7 +11,6 @@ headers = {
 
 def get_all_symbols():
     '''Return symbols for every letter'''
-
     pool = Pool()
 
     letters = list(string.ascii_lowercase)
@@ -32,7 +28,6 @@ def get_symbols(letter):
     response = requests.get(url, headers=headers)
 
     soup = BeautifulSoup(response.text, 'html.parser')
-
     symbols_table = soup.find_all('tr', {"class": "ro"})
 
     for symbol_table in symbols_table:
@@ -52,7 +47,6 @@ def get_quote(symbol):
     URL = f"https://finance.yahoo.com/quote/{symbol}"
 
     response = requests.get(URL, headers=headers)
-    
     soup = BeautifulSoup(response.text, 'html.parser')
 
     try:
@@ -69,11 +63,9 @@ def get_quote(symbol):
             "market_cap" : market_cap.text,
         }
 
-        print(data)
-
         return data
     except Exception as e:
-        print(str(e))
+        pass
 
 def create_excel_file(symbols):
     '''Create excel file with realtime market data'''
@@ -88,7 +80,6 @@ def create_excel_file(symbols):
     dataframe.to_excel("real_time_stock_data.xlsx", index=False)
 
 if __name__ == '__main__':
-    start = time.perf_counter()
 
     data = []
     symbols = get_all_symbols()
@@ -97,6 +88,5 @@ if __name__ == '__main__':
         data.extend(symbol_list)
 
     create_excel_file(data)
-    finish = time.perf_counter()
 
-    print(f"Program Finished in {finish}")
+    print("\n\nfin!")

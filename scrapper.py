@@ -103,7 +103,7 @@ def get_most_active_stocks():
                 "name": name,
                 "price": price,
                 "change": change,
-                "% change": percent_change,
+                "percent_change": percent_change,
                 "volume": volume,
                 "market_cap": market_cap
             }
